@@ -64,3 +64,14 @@ class AppLogEvent:
     timestamp: datetime
     level: str
     message: str
+
+@dataclass
+class AlertEvent:
+    timestamp: datetime
+    message: str
+    level: str # 'INFO', 'WARNING', 'ERROR'
+
+@dataclass
+class NewSignalEvent:
+    timestamp: datetime
+    reason: str
