@@ -1,0 +1,42 @@
+# Core & Data Handling
+pandas>=1.5.0
+numpy>=1.23.0
+pyarrow>=10.0.0
+
+# Event-Driven Architecture (built-in asyncio)
+
+# Data Handling & Storage
+feedparser>=6.0.0
+
+# Vision Module
+mss>=7.0.0
+opencv-python>=4.6.0
+pytesseract>=0.3.10
+ultralytics>=8.0.0
+
+# Analytics & ML
+torch>=2.0.0
+transformers>=4.25.0
+TA-Lib # Requires separate installation of the underlying C library
+scikit-learn>=1.2.0
+vaderSentiment>=3.3.2
+
+# Backtesting
+vectorbt>=0.25.0
+quantstats>=0.0.60
+
+# UI
+PyQt6>=6.4.0
+pyqtgraph>=0.13.0
+
+# MLOps
+mlflow>=2.0.0
+
+# Generative AI (Phase 2)
+ollama>=0.1.0
+
+# Notebooks & Development
+ipykernel>=6.20.0
+jupyter>=1.0.0
+matplotlib>=3.6.0
+seaborn>=0.12.0
