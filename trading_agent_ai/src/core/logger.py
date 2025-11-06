@@ -1,16 +1,14 @@
 import logging
 import logging.config
-from pathlib import Path
+import os
 
 
-def setup_logging(config_path: str):
+def setup_logging(config_path='config/logging.ini', default_level=logging.INFO):
     """
-    Sets up logging for the entire application using the provided config file.
+    Setup logging configuration
     """
-    config_file = Path(config_path)
-    if not config_file.exists():
-        raise FileNotFoundError(f"Logging config file not found: {config_file}")
-
-    logging.config.fileConfig(config_file)
-    logger = logging.getLogger(__name__)
-    logger.info("Logging setup completed.")
+    if os.path.exists(config_path):
+        logging.config.fileConfig(config_path)
+    else:
+        logging.basicConfig(level=default_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.warning(f"Logging config file not found at {config_path}. Using basic config.")

@@ -1,78 +1,66 @@
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
-
+from datetime import datetime
+from typing import Any, Dict
 
 @dataclass
 class MarketEvent:
+    timestamp: datetime
     ticker: str
     price: float
     volume: int
-    timestamp: float
-    additional_data: Optional[Dict[str, Any]] = None
-
 
 @dataclass
 class NewsEvent:
+    timestamp: datetime
     headline: str
     source: str
-    timestamp: float
-    sentiment_score: float
-    url: Optional[str] = None
-
+    sentiment: float
 
 @dataclass
 class VisionEvent:
+    timestamp: datetime
     ticker: str
     pattern: str
     confidence: float
-    timestamp: float
-    bounding_box: Optional[Dict[str, Any]] = None
-
 
 @dataclass
 class SignalEvent:
+    timestamp: datetime
     ticker: str
-    action: str  # 'BUY' or 'SELL'
-    price: float
+    signal: str  # 'BUY', 'SELL', 'HOLD'
     confidence: float
-    explanation: str
-    timestamp: float
-
+    reason: str
 
 @dataclass
 class OrderRequestEvent:
+    timestamp: datetime
     ticker: str
-    action: str
-    quantity: int
-    price: float
-    timestamp: float
-
+    action: str  # 'BUY', 'SELL'
+    quantity: float
+    order_type: str = 'MARKET'
 
 @dataclass
 class FillEvent:
-    order_id: str
+    timestamp: datetime
     ticker: str
     action: str
-    quantity: int
+    quantity: float
     price: float
-    timestamp: float
-
+    order_id: str
 
 @dataclass
 class PnLUpdateEvent:
-    ticker: str
+    timestamp: datetime
     pnl: float
-    timestamp: float
-
+    portfolio_value: float
 
 @dataclass
 class ChatRequestEvent:
-    message: str
-    timestamp: float
-
+    timestamp: datetime
+    text: str
 
 @dataclass
-class AlertEvent:
+class AppLogEvent:
+    timestamp: datetime
+    level: str
     message: str
-    level: str  # 'INFO', 'WARNING', 'ERROR'
-    timestamp: float
