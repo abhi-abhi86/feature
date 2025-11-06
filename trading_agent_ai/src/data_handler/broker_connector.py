@@ -23,7 +23,7 @@ class BrokerConnector:
         
         # Start the websocket connection
         await self.websocket_manager.connect()
-        asyncio.create_task(self.websocket_manager.listen())
+        self.listen_task = asyncio.create_task(self.websocket_manager.listen())
         logger.info("Broker Connector started.")
 
     async def stop(self):

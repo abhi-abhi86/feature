@@ -17,9 +17,9 @@ class MainFuser:
         self.news_state = {}
         self.vision_state = {}
 
-    async def start(self):
+    def start(self):
         logger.info("Starting Main Fuser...")
-        asyncio.create_task(self._listen_for_events())
+        self.listen_task = asyncio.create_task(self._listen_for_events())
         logger.info("Main Fuser started.")
 
     async def _listen_for_events(self):

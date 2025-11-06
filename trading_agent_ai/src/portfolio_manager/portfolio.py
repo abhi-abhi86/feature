@@ -12,12 +12,12 @@ class Portfolio:
         self.positions: Dict[str, float] = {}  # Ticker -> Quantity
         self.holdings_value = 0.0
 
-    async def start(self):
+    def start(self):
         logger.info("Starting Portfolio Manager...")
         # In a real app, you might load initial positions from the database
         logger.info(f"Initial cash: {self.cash}")
 
-    async def on_fill(self, event: FillEvent):
+    def on_fill(self, event: FillEvent):
         """
         Updates the portfolio based on a fill event.
         """

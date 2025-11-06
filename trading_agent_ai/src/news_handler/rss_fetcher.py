@@ -6,7 +6,7 @@ from datetime import datetime
 from ..core.config_loader import ConfigLoader
 from ..core.event_bus import event_bus
 from ..core.event_types import NewsEvent
-from ..core.sentiment import Sentiment
+from ..core.sentiment import SentimentAnalyzer
 from .feed_manager import FeedManager
 
 logger = logging.getLogger(__name__)
@@ -15,13 +15,13 @@ class RSSFetcher:
     def __init__(self, config: ConfigLoader):
         self.config = config
         self.feed_manager = FeedManager(config)
-        self.sentiment_analyzer = Sentiment()
+        self.sentiment_analyzer = SentimentAnalyzer()
         self.fetch_interval = int(self.config.get_main_config("General", "news_fetch_interval_seconds", fallback=300))
         self.seen_headlines = set()
 
-    async def start(self):
+    def start(self):
         logger.info("Starting RSS Fetcher...")
-        asyncio.create_task(self._fetch_loop())
+        self.fetch_task = asyncio.create_task(self._fetch_loop())
         logger.info(f"RSS Fetcher started. Fetching every {self.fetch_interval} seconds.")
 
     async def _fetch_loop(self):

@@ -19,7 +19,6 @@ class MultiFusionStrategy(BaseStrategy):
 
         vision_signal = 0
         news_signal = 0
-        # predictive_signal = 0 # Placeholder for LSTM-Transformer model
 
         if vision_data:
             if 'bullish' in vision_data.pattern.lower():

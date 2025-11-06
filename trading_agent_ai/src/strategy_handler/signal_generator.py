@@ -19,7 +19,7 @@ class SignalGenerator:
         """
         Creates a SignalEvent and puts it on the event bus.
         """
-        confidence = self._calculate_confidence(market_data, news_data, vision_data)
+        confidence = self._calculate_confidence(news_data, vision_data)
         reason = self._build_reason_string(signal, market_data, news_data, vision_data)
 
         signal_event = SignalEvent(
@@ -35,7 +35,6 @@ class SignalGenerator:
 
     def _calculate_confidence(
         self,
-        market_data: MarketEvent,
         news_data: Optional[NewsEvent],
         vision_data: Optional[VisionEvent]
     ) -> float:
@@ -69,4 +68,3 @@ class SignalGenerator:
         return (f"Signal: {signal} {market_data.ticker}, "
                 f"Reason: Image model ({pattern_name}), "
                 f"News ({sentiment_score})")
-                # f", Prediction ({pred_direction})")

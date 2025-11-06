@@ -1,98 +1,88 @@
 import asyncio
 import sys
-from pathlib import Path
+import qasync
 from PyQt6.QtWidgets import QApplication
 
-# Add the project root to the Python path to allow for absolute imports
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
+from .core.config_loader import ConfigLoader
+from .core.logger import setup_logging
+from .core.database import Database
+from .core.event_bus import event_bus
+from .data_handler.broker_connector import BrokerConnector
+from .news_handler.rss_fetcher import RSSFetcher
+from .strategy_handler.main_fuser import MainFuser
+from .portfolio_manager.portfolio import Portfolio
+from .portfolio_manager.risk_manager import RiskManager
+from .portfolio_manager.pnl_tracker import PnLTracker
+from .execution_handler.broker_executor import BrokerExecutor
+from .ui.main_overlay import MainOverlay
+from .ui.ui_manager import UIManager
+from .core.event_types import MarketEvent, NewsEvent, VisionEvent, SignalEvent, OrderRequestEvent, FillEvent
 
-# Core components
-from src.core.config_loader import ConfigLoader
-from src.core.logger import setup_logging
-from src.core.event_bus import EventBus
-from src.core.database import DatabaseManager
+async def main():
+    # 1. Initialization
+    config = ConfigLoader()
+    setup_logging()
+    db = Database(config.get("Paths", "database_path"))
+    
+    # 2. Module Setup
+    broker_connector = BrokerConnector(config)
+    news_fetcher = RSSFetcher(config)
+    strategy_fuser = MainFuser()
+    
+    portfolio = Portfolio()
+    risk_manager = RiskManager(portfolio)
+    pnl_tracker = PnLTracker(portfolio)
+    
+    broker_executor = BrokerExecutor(broker_connector.get_api_client())
 
-# Main application modules
-from src.data_handler.broker_connector import BrokerConnector
-from src.news_handler.rss_fetcher import RSSFetcher
-from src.strategy_handler.main_fuser import MainFuser
-from src.portfolio_manager.portfolio import Portfolio
-from src.execution_handler.broker_executor import BrokerExecutor
+    # 3. Start Core Services
+    await broker_connector.start()
+    news_fetcher.start()
+    strategy_fuser.start()
+    portfolio.start()
 
-# UI components
-from src.ui.main_overlay import MainOverlay
-from src.ui.ui_manager import UIManager
+    # 4. Event Loop for dispatching events
+    async def event_dispatcher():
+        while True:
+            event = await event_bus.get()
+            if isinstance(event, (MarketEvent, NewsEvent, VisionEvent)):
+                await strategy_fuser._process_signals()
+            elif isinstance(event, SignalEvent):
+                await risk_manager.on_signal(event)
+            elif isinstance(event, OrderRequestEvent):
+                await broker_executor.on_order_request(event)
+            elif isinstance(event, FillEvent):
+                portfolio.on_fill(event)
+            elif isinstance(event, MarketEvent):
+                await pnl_tracker.on_market_data(event)
+            event_bus.task_done()
 
-# --- Global Exception Hook ---
-def handle_exception(exc_type, exc_value, exc_traceback):
-    """Log any uncaught exceptions."""
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-    log.critical("Uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
+    # Start the dispatcher
+    dispatcher_task = asyncio.create_task(event_dispatcher())
 
-sys.excepthook = handle_exception
+    # 5. UI Setup
+    app = QApplication.instance() or QApplication(sys.argv)
+    
+    overlay = MainOverlay()
+    ui_manager = UIManager(overlay)
+    
+    # Start the UI event listener
+    ui_listener_task = asyncio.create_task(ui_manager.listen_for_ui_events())
+    
+    overlay.show()
+    
+    # The qasync event loop will run both Qt and asyncio events.
+    await asyncio.gather(dispatcher_task, ui_listener_task)
 
-# --- Main Application Class ---
-class TradingAgentApp:
-    """The main application class that orchestrates all components."""
-    def __init__(self):
-        # Initial setup
-        self.config = ConfigLoader()
-        self.log = setup_logging(self.config.get('Logging', 'log_config_path'))
-        self.log.info("--- Starting Trading Agent AI ---")
-
-        # Core components
-        self.event_bus = EventBus()
-        self.db_manager = DatabaseManager(self.config.get('Database', 'db_path'))
-
-        # Initialize main modules
-        self.log.info("Initializing application modules...")
-        self.broker_connector = BrokerConnector(self.config, self.event_bus)
-        self.rss_fetcher = RSSFetcher(self.config, self.event_bus)
-        self.strategy_fuser = MainFuser(self.config, self.event_bus)
-        self.portfolio = Portfolio(self.config, self.event_bus, self.db_manager)
-        self.broker_executor = BrokerExecutor(self.config, self.event_bus)
-        
-        # Initialize UI
-        self.log.info("Initializing UI...")
-        self.qt_app = QApplication(sys.argv)
-        self.ui_manager = UIManager(self.event_bus)
-        self.main_overlay = MainOverlay(self.ui_manager)
-        self.ui_manager.set_main_window(self.main_overlay) # Give manager a reference to the window
-
-    async def run(self):
-        """Starts all asynchronous tasks and the UI event loop."""
-        self.log.info("Starting application event loop...")
-        
-        # Create a list of all async tasks to run
-        tasks = [
-            self.broker_connector.run(),
-            self.rss_fetcher.run(),
-            self.strategy_fuser.run(),
-            self.portfolio.run(),
-            self.broker_executor.run(),
-            self.ui_manager.run() # The UI manager also runs in the async loop
-        ]
-
-        # Show the UI
-        self.main_overlay.show()
-
-        # Run all tasks concurrently
-        await asyncio.gather(*tasks)
-
-    def start(self):
-        """Public method to start the application."""
-        try:
-            asyncio.run(self.run())
-        except KeyboardInterrupt:
-            self.log.info("Application shutting down gracefully.")
-        finally:
-            self.qt_app.quit()
 
 if __name__ == "__main__":
-    # To avoid issues with PyQt and asyncio, we use this structure.
-    # The QApplication must be created before the asyncio loop starts.
-    app = TradingAgentApp()
-    app.start()
+    try:
+        app = QApplication(sys.argv)
+        loop = qasync.QEventLoop(app)
+        asyncio.set_event_loop(loop)
+        
+        with loop:
+            loop.run_until_complete(main())
+            
+    except KeyboardInterrupt:
+        print("Application shutting down.")
