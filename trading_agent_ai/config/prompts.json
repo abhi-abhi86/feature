@@ -1,0 +1,5 @@
+{
+    "explanation_prompt": "Explain the trading signal for {ticker} with action {action} based on the following data: Image pattern: {pattern}, Prediction score: {prediction}, News sentiment: {sentiment}. Provide a concise explanation.",
+    "chat_prompt": "You are a trading assistant. Answer the user's question about trading, markets, or the signal: {signal_details}. Be helpful and accurate.",
+    "signal_summary_prompt": "Summarize the current market signal for {ticker}: Action: {action}, Confidence: {confidence}, Reason: {reason}."
+}
