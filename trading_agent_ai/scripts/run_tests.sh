@@ -38,8 +38,7 @@ echo "Discovering and running tests with pytest..."
 
 # Run pytest
 # -v: for verbose output
-# --cov: to generate a code coverage report
-pytest -v --cov="$PROJECT_ROOT/src" "$TESTS_DIR"
+pytest -v "$TESTS_DIR"
 
 TEST_EXIT_CODE=$?
 

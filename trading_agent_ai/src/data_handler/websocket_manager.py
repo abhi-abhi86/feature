@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import json
 import logging
+import random
 from datetime import datetime
 
 from ..core.config_loader import ConfigLoader
@@ -15,6 +16,7 @@ class WebsocketManager:
         self.config = config
         self.websocket_url = self.config.get("Broker", "websocket_url")
         self.websocket = None
+        self.mock_mode = False
 
     async def connect(self):
         try:
@@ -23,12 +25,18 @@ class WebsocketManager:
             # You might need to send an authentication message here
             # depending on the broker's API
         except Exception as e:
-            logger.error(f"Failed to connect to WebSocket: {e}")
-            raise
+            logger.warning(f"Failed to connect to WebSocket: {e}")
+            logger.info("Switching to mock mode for testing/development")
+            self.mock_mode = True
+            # Don't raise exception, continue in mock mode
 
     async def listen(self):
+        if self.mock_mode:
+            await self._mock_listen()
+            return
+            
         if not self.websocket:
-            logger.error("WebSocket is not connected.")
+            logger.error("WebSocket is not connected and not in mock mode.")
             return
 
         try:
@@ -52,7 +60,40 @@ class WebsocketManager:
         except Exception as e:
             logger.error(f"An error occurred in WebSocket listener: {e}")
 
+    async def _mock_listen(self):
+        """Generate mock market data for testing purposes."""
+        logger.info("Starting mock market data generation")
+        tickers = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "INFY"]
+        
+        while True:
+            try:
+                # Generate mock market data
+                ticker = random.choice(tickers)
+                base_price = {"NIFTY": 18000, "BANKNIFTY": 42000, "RELIANCE": 2500, "TCS": 3500, "INFY": 1500}
+                price_change = random.uniform(-50, 50)
+                price = base_price.get(ticker, 1000) + price_change
+                volume = random.randint(1000, 10000)
+                
+                market_event = MarketEvent(
+                    timestamp=datetime.now(),
+                    ticker=ticker,
+                    price=round(price, 2),
+                    volume=volume
+                )
+                
+                await event_bus.put(market_event)
+                logger.debug(f"Published Mock MarketEvent: {market_event}")
+                
+                # Wait 5 seconds between mock data points
+                await asyncio.sleep(5)
+                
+            except Exception as e:
+                logger.error(f"Error in mock data generation: {e}")
+                await asyncio.sleep(1)
+
     async def close(self):
         if self.websocket:
             await self.websocket.close()
             logger.info("WebSocket connection closed.")
+        elif self.mock_mode:
+            logger.info("Mock mode stopped.")

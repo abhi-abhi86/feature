@@ -7,7 +7,9 @@ logger = logging.getLogger(__name__)
 
 
 class Database:
-    def __init__(self, db_path: str = "local_database/app_data.db"):
+    def __init__(self, config, db_path: str = None):
+        if db_path is None:
+            db_path = config.get("Paths", "database_path", fallback="local_database/app_data.db")
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
@@ -86,3 +88,8 @@ class Database:
         """Close the database connection."""
         self.conn.close()
         logger.info("Database connection closed.")
+        
+    def initialize(self):
+        """Initialize method (for compatibility with main app)."""
+        # Already initialized in __init__, this is just for interface compatibility
+        logger.info("Database already initialized.")

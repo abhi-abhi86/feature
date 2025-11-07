@@ -22,7 +22,6 @@ async def main():
     # 1. Initialization
     config = ConfigLoader()
     setup_logging()
-    db = Database(config.get("Paths", "database_path"))
     
     # 2. Module Setup
     broker_connector = BrokerConnector(config)
@@ -61,7 +60,8 @@ async def main():
     dispatcher_task = asyncio.create_task(event_dispatcher())
 
     # 5. UI Setup
-    app = QApplication.instance() or QApplication(sys.argv)
+    # Ensure QApplication is created
+    QApplication.instance() or QApplication(sys.argv)
     
     overlay = MainOverlay()
     ui_manager = UIManager(overlay)

@@ -12,7 +12,7 @@ class APIClient:
         self.base_url = self.config.get("Broker", "rest_url")
         self.api_key = self.config.get("Broker", "api_key")
         self.api_secret = self.config.get("Broker", "api_secret")
-        self.timeout = self.config.get_main_config("API", "timeout", fallback=30)
+        self.timeout = int(self.config.get_main_config("API", "timeout", fallback=30))
         self.headers = {
             'Accept': 'application/json',
             # Add other necessary headers, e.g., for authentication

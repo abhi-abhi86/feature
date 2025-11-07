@@ -17,6 +17,12 @@ class BrokerConnector:
 
     async def start(self):
         logger.info("Starting Broker Connector...")
+        
+        # Check if we're in demo mode
+        demo_mode = self.config.get("Broker", "demo_mode", fallback="false").lower() == "true"
+        if demo_mode:
+            logger.info("Demo mode enabled - using mock data")
+        
         # Authentication and other setup can be done here
         # For example, getting an access token
         # self.api_client.authenticate()

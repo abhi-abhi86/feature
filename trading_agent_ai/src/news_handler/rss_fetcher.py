@@ -18,11 +18,18 @@ class RSSFetcher:
         self.sentiment_analyzer = SentimentAnalyzer()
         self.fetch_interval = int(self.config.get_main_config("General", "news_fetch_interval_seconds", fallback=300))
         self.seen_headlines = set()
+        self.fetch_task = None
 
     def start(self):
         logger.info("Starting RSS Fetcher...")
         self.fetch_task = asyncio.create_task(self._fetch_loop())
         logger.info(f"RSS Fetcher started. Fetching every {self.fetch_interval} seconds.")
+        
+    def stop(self):
+        logger.info("Stopping RSS Fetcher...")
+        if self.fetch_task:
+            self.fetch_task.cancel()
+        logger.info("RSS Fetcher stopped.")
 
     async def _fetch_loop(self):
         while True:

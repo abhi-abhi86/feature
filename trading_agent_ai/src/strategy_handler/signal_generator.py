@@ -63,7 +63,6 @@ class SignalGenerator:
         """
         pattern_name = vision_data.pattern if vision_data else "N/A"
         sentiment_score = f"{news_data.sentiment:.2f}" if news_data else "N/A"
-        # pred_direction = "N/A" # Placeholder for predictive model
 
         return (f"Signal: {signal} {market_data.ticker}, "
                 f"Reason: Image model ({pattern_name}), "
