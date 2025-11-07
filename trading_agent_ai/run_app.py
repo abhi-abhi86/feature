@@ -55,33 +55,40 @@ async def main():
     
     # Event dispatcher
     async def event_dispatcher():
-        while True:
-            event = await event_bus.get()
-            
-            if isinstance(event, MarketEvent):
-                await main_fuser.handle_market_event(event)
-                # Portfolio doesn't handle market events directly in this implementation
-                await pnl_tracker.on_market_data(event)
-                ui_manager.update_market_data(event)
+        try:
+            while True:
+                event = await asyncio.wait_for(event_bus.get(), timeout=1.0)
                 
-            elif isinstance(event, NewsEvent):
-                await main_fuser.handle_news_event(event)
-                
-            elif isinstance(event, VisionEvent):
-                await main_fuser.handle_vision_event(event)
-                
-            elif isinstance(event, SignalEvent):
-                # Check with risk manager
-                await risk_manager.on_signal(event)
-                ui_manager.add_signal(event)
-                
-            elif isinstance(event, OrderRequestEvent):
-                await broker_executor.execute_order(event)
-                
-            elif isinstance(event, FillEvent):
-                portfolio.on_fill(event)
-                # PnLTracker doesn't have update_fill method
-                ui_manager.update_portfolio(portfolio.get_positions())
+                if isinstance(event, MarketEvent):
+                    await main_fuser.handle_market_event(event)
+                    # Portfolio doesn't handle market events directly in this implementation
+                    await pnl_tracker.on_market_data(event)
+                    ui_manager.update_market_data(event)
+                    
+                elif isinstance(event, NewsEvent):
+                    await main_fuser.handle_news_event(event)
+                    
+                elif isinstance(event, VisionEvent):
+                    await main_fuser.handle_vision_event(event)
+                    
+                elif isinstance(event, SignalEvent):
+                    # Check with risk manager
+                    await risk_manager.on_signal(event)
+                    ui_manager.add_signal(event)
+                    
+                elif isinstance(event, OrderRequestEvent):
+                    await broker_executor.execute_order(event)
+                    
+                elif isinstance(event, FillEvent):
+                    portfolio.on_fill(event)
+                    # PnLTracker doesn't have update_fill method
+                    ui_manager.update_portfolio(portfolio.get_positions())
+                    
+        except asyncio.TimeoutError:
+            # Normal timeout, continue
+            pass
+        except Exception as e:
+            print(f"Error in event dispatcher: {e}")
     
     # Start all components
     try:
@@ -106,11 +113,29 @@ async def main():
         
         print("Trading Agent AI started successfully!")
         print("Demo mode is enabled - using mock market data")
-        print("Press Ctrl+C to stop the application")
+        print("Close the UI window or press Ctrl+C to stop the application")
         
-        # Keep the application running
-        while True:
-            await asyncio.sleep(1)
+        # Show UI
+        main_overlay.show()
+        
+        # Wait for the application to exit
+        print("Application running. Close the window to exit.")
+        
+        # Set up clean exit handling
+        import signal
+        def signal_handler(signum, frame):
+            print("\nReceived signal, shutting down...")
+            app.quit()
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        # Keep running until the application quits
+        try:
+            while True:
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            print("Main task cancelled")
+            raise
             
     except KeyboardInterrupt:
         print("\nShutting down Trading Agent AI...")
@@ -120,9 +145,11 @@ async def main():
         traceback.print_exc()
     finally:
         # Cleanup
+        print("Cleaning up...")
         await broker_connector.stop()
         rss_fetcher.stop()
         db.close()
+        print("Cleanup completed")
 
 if __name__ == "__main__":
     # Create PyQt application
@@ -132,6 +159,18 @@ if __name__ == "__main__":
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)
     
-    # Run the main application
-    with loop:
-        loop.run_until_complete(main())
+    # Create a task for the main application
+    main_task = asyncio.ensure_future(main())
+    
+    try:
+        # Run the application
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("\nReceived interrupt signal...")
+    finally:
+        # Cancel the main task if it's still running
+        if not main_task.done():
+            main_task.cancel()
+        
+        # Close the event loop
+        loop.close()
