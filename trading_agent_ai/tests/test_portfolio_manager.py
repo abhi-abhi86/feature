@@ -6,9 +6,9 @@ from pathlib import Path
 # Add src to path for testing
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from portfolio_manager.portfolio import Portfolio
-from portfolio_manager.risk_manager import RiskManager
-from core.event_types import SignalEvent
+from src.portfolio_manager.portfolio import Portfolio
+from src.portfolio_manager.risk_manager import RiskManager
+from src.core.event_types import SignalEvent
 from datetime import datetime
 
 class TestPortfolioManager(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestPortfolioManager(unittest.TestCase):
 
     def test_portfolio_buy_operation(self):
         """Test buying stocks."""
-        from core.event_types import FillEvent
+        from src.core.event_types import FillEvent
         
         fill_event = FillEvent(
             timestamp=datetime.now(),

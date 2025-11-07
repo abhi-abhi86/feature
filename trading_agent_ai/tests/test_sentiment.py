@@ -6,7 +6,7 @@ from pathlib import Path
 # Add src to path for testing
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from core.sentiment import SentimentAnalyzer
+from src.core.sentiment import SentimentAnalyzer
 
 class TestSentimentAnalysis(unittest.TestCase):
     def setUp(self):
