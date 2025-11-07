@@ -61,3 +61,11 @@ class APIClient:
         """
         endpoint = "/orders"
         return self._request("POST", endpoint, data=order_details)
+
+    def get_websocket_url(self) -> str:
+        """
+        Fetches the websocket URL for market data feed.
+        """
+        endpoint = "/feed/market-data-feed/authorize"
+        response = self._request("GET", endpoint)
+        return response.get("data", {}).get("authorized_redirect_uri")

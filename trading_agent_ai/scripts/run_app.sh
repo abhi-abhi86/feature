@@ -22,7 +22,7 @@ MAIN_APP_PATH="$PROJECT_ROOT/src/main_app.py"
 
 if [ -f "$MAIN_APP_PATH" ]; then
     echo "Starting the Trading Agent AI..."
-    python "$MAIN_APP_PATH"
+    python -m src.main_app
 else
     echo "Error: Main application file not found at $MAIN_APP_PATH"
     exit 1
