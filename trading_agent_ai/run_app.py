@@ -51,6 +51,7 @@ async def main():
     
     # Initialize UI components
     main_overlay = MainOverlay()
+    ui_manager = UIManager(main_overlay)
     
     # Event dispatcher
     async def event_dispatcher():
@@ -61,6 +62,7 @@ async def main():
                 await main_fuser.handle_market_event(event)
                 # Portfolio doesn't handle market events directly in this implementation
                 await pnl_tracker.on_market_data(event)
+                ui_manager.update_market_data(event)
                 
             elif isinstance(event, NewsEvent):
                 await main_fuser.handle_news_event(event)
@@ -71,6 +73,7 @@ async def main():
             elif isinstance(event, SignalEvent):
                 # Check with risk manager
                 await risk_manager.on_signal(event)
+                ui_manager.add_signal(event)
                 
             elif isinstance(event, OrderRequestEvent):
                 await broker_executor.execute_order(event)
@@ -78,6 +81,7 @@ async def main():
             elif isinstance(event, FillEvent):
                 portfolio.on_fill(event)
                 # PnLTracker doesn't have update_fill method
+                ui_manager.update_portfolio(portfolio.get_positions())
     
     # Start all components
     try:
@@ -86,6 +90,13 @@ async def main():
         # Start background services
         await broker_connector.start()
         rss_fetcher.start()
+        
+        # Update UI with connection status
+        ui_manager.update_broker_status(broker_connector.is_connected())
+        ui_manager.update_news_status(True)
+        
+        # Start UI event listener
+        _ui_task = asyncio.create_task(ui_manager.listen_for_ui_events())
         
         # Start event dispatcher  
         _dispatcher_task = asyncio.create_task(event_dispatcher())  # Keep reference for GC

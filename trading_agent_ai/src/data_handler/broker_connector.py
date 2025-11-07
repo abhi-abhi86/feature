@@ -39,3 +39,8 @@ class BrokerConnector:
 
     def get_api_client(self) -> APIClient:
         return self.api_client
+
+    def is_connected(self) -> bool:
+        """Check if the broker connection is active."""
+        return (self.websocket_manager.websocket is not None or 
+                self.websocket_manager.mock_mode)
