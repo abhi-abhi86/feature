@@ -86,3 +86,17 @@ if __name__ == "__main__":
             
     except KeyboardInterrupt:
         print("Application shutting down.")
+
+
+
+# this commands to run the code 
+#___________________________________________________________________
+
+## Navigate to project
+# ( cd /Users/mg/feature/trading_agent_ai )
+
+##Run the application
+# ( python run_app.py )
+
+## Run tests
+# ( ./scripts/run_tests.sh )
