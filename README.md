@@ -1,199 +1,107 @@
-# feature
+# AI-Powered Trading Agent (Zero-Budget MVP)
 
+This project is a desktop-first, AI-powered trading agent designed for the Indian market. It leverages a multi-modal AI approach, fusing signals from computer vision, predictive modeling, and real-time news sentiment analysis. The entire application is built on a "zero-budget" philosophy, using a 100% free and open-source technology stack.
 
-# feature
+## Key Features
 
-[![Language composition](https://img.shields.io/badge/languages-Python%20%7C%20Jupyter%20Notebook%20%7C%20Shell-blue)]()
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
+- **Multi-Modal AI Strategy**: The core "Alpha Engine" fuses signals from three distinct sources for high-confidence trade suggestions:
+    1.  **Image-Based Signals**: A YOLOv8 model trained to recognize chart patterns (e.g., Bullish Flags, Head & Shoulders) directly from screen captures.
+    2.  **Predictive Signals**: A hybrid LSTM-Transformer model to forecast price direction from historical data.
+    3.  **News Sentiment Signals**: Real-time "current affairs" analysis by fetching headlines from public RSS feeds and scoring them locally with the VADER sentiment analysis engine.
+- **Zero-Budget Architecture**: Runs entirely on your local machine with no cloud costs.
+    - **Data**: Connects to broker-provided APIs for market data and uses free public RSS feeds for news.
+    - **Database**: Uses a local SQLite database (`app_data.db`) for all live data storage (trades, signals, etc.).
+    - **Generative AI**: (Phase 2) Integrates with local LLMs like Llama 3 via Ollama for a "Chart-GPT" feature, providing free, context-aware explanations of trading signals.
+- **Desktop-First UI**: A transparent, always-on-top UI overlay built with PyQt6 that displays critical information without obscuring your main trading platform.
+- **Event-Driven Architecture**: A monolithic but modular design where components (Data, News, Strategy, Portfolio, Execution) run in a single application and communicate asynchronously via an in-memory event bus (`asyncio.Queue`).
+- **Compliance by Design**: The execution handler is built with the SEBI framework in mind, incorporating logic for rate-limiting and 2FA token management.
+- **Offline Tooling**: Includes a complete `ml_pipeline` for processing data and training your own models, and a `backtester` (using VectorBT) to test strategies before deployment.
 
-A concise, user-friendly README for the `feature` repository by abhi-abhi86. This version adds a suggested file structure and explains why each language appears in the repository. Replace placeholders with concrete file names and details from the codebase when available.
+## System Architecture (Monolithic Desktop App)
 
----
+The application runs as a single process, with modules communicating via an internal event bus.
 
-Table of contents
-- [Project](#project)
-- [Repository composition & why these languages](#repository-composition--why-these-languages)
-- [Suggested file structure (example)](#suggested-file-structure-example)
-- [Getting started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage examples](#usage-examples)
-  - [Run Python scripts / package](#run-python-scripts--package)
-  - [Open / run Jupyter notebooks](#open--run-jupyter-notebooks)
-  - [Use shell scripts](#use-shell-scripts)
-- [Configuration & data](#configuration--data)
-- [Development](#development)
-  - [Testing](#testing)
-  - [Formatting & linting](#formatting--linting)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements & contact](#acknowledgements--contact)
+1.  **Data Handler**: Connects to the broker's WebSocket for real-time price data and its REST API for historical data and account information.
+2.  **News Handler**: Fetches headlines from RSS feeds using `feedparser` and passes them to the sentiment analyzer.
+3.  **Strategy Handler (Alpha Engine)**: The brain of the operation. It listens for market, news, and vision events and uses the `MultiFusionStrategy` to generate a trading signal ('BUY', 'SELL', 'HOLD').
+4.  **Portfolio & Risk Manager**: Tracks current positions, cash, and P&L. The `RiskManager` acts as a gatekeeper, validating signals against pre-defined risk rules (e.g., max order size) before allowing a trade.
+5.  **Execution Handler**: The only module authorized to place trades. It listens for approved order requests and sends them to the broker API, while managing order lifecycle and compliance.
+6.  **UI (Overlay)**: The PyQt frontend, which listens for events (like P&L updates) and displays them.
 
----
+## Technology Stack
 
-## Project
+- **Core Language**: Python (3.10+)
+- **Core & EDA**: `asyncio`, `asyncio.Queue`
+- **Data Handling & Storage**: `pandas`, `numpy`, `sqlite3`, `pyarrow`, `feedparser`
+- **Vision Module**: `mss`, `opencv-python`, `pytesseract`, `ultralytics` (for YOLOv8)
+- **Analytics & ML**: `torch`, `transformers`, `ta-lib`, `scikit-learn`, `vaderSentiment`
+- **Backtesting**: `vectorbt`, `pyfolio`
+- **UI**: `PyQt6`, `pyqtgraph`, `qasync`
+- **MLOps**: `mlflow` (for local experiment tracking)
+- **Generative AI (Phase 2)**: `ollama`
 
-One-line summary
-- Example: "feature contains utilities, experiments and notebooks to preprocess data, train and evaluate ML models, and produce analysis reports."
+## Setup and Installation
 
-Replace this with a short paragraph describing the repository's actual purpose, expected inputs/outputs, and main entry points (scripts, modules, or notebooks).
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/abhi-abhi86/feature.git
+    cd feature/trading_agent_ai
+    ```
 
-## Repository composition & why these languages
+2.  **Prerequisites**
+    - This project uses `TA-Lib`. You must install the underlying C library before installing the Python wrapper. Follow the instructions for your OS [here](https://github.com/mrjbq7/ta-lib).
 
-According to GitHub language detection, this repo is roughly:
-- Python — 78%
-- Jupyter Notebook — 17.5%
-- Shell — 4.5%
+3.  **Create a Virtual Environment**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    ```
 
-Why each language is present (typical reasons)
-- Python (≈78%): Primary implementation language. Used for core modules, reusable utilities, data processing, model training, CLI tools, and test suites. Expect to find .py files under a package folder (e.g., `src/` or top-level `.py` files).
-- Jupyter Notebook (≈17.5%): Exploratory data analysis, experiments, demonstrations, and visualizations. Notebooks usually live in `notebooks/` and are useful for documenting experiments and sharing interactive results.
-- Shell (≈4.5%): Small automation and utility scripts (bash) used to run pipelines, set up environments, or used in CI workflows (e.g., `scripts/run_pipeline.sh`, `.github/workflows/*` may include shell steps).
+4.  **Install Dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-If you want a precise mapping between files and language percentages, I can inspect the repository and list exact files that contribute to each language.
+5.  **Configure API Keys**
+    - Create a file named `broker_api_keys.env` inside the `config/` directory.
+    - Add your broker's API key, secret, and any other required tokens in this format:
+      ```
+      API_KEY=your_api_key
+      API_SECRET=your_api_secret
+      ```
+    - This file is gitignored for security.
 
-## Suggested file structure (example)
+6.  **Add Trained Models**
+    - Place your trained YOLOv8 model (e.g., `best.pt`) in `models/vision/`.
+    - Place your trained prediction model (e.g., `lstm_transformer.pt`) in `models/prediction/`.
 
-This is an example layout to document in README. Update to match actual repo contents.
+## Usage
 
-- README.md
-- LICENSE
-- requirements.txt or environment.yml
-- setup.py / pyproject.toml (if packaging)
-- src/
-  - feature/                # main python package
-    - __init__.py
-    - data.py
-    - preprocess.py
-    - model.py
-    - train.py
-    - evaluate.py
-- notebooks/
-  - 00-exploration.ipynb
-  - 01-training-experiment.ipynb
-- scripts/
-  - run_pipeline.sh
-  - download_data.sh
-- data/
-  - raw/                    # ignored in VCS (add to .gitignore)
-  - processed/
-- tests/
-  - test_preprocess.py
-  - test_model.py
-- .github/
-  - workflows/
-    - ci.yml
-- docs/                     # optional: HTML docs or generated docs
-- .env.example
+To run the application, execute the main entry point:
 
-Note: If your repository differs, replace the above tree with the real file names and paths. If you'd like, I can enumerate the repo files and produce a file-based tree automatically.
+```bash
+python src/main_app.py
+```
 
-## Getting started
+## Project Roadmap
 
-### Prerequisites
-- Python 3.8+ (3.9/3.10 recommended)
-- Git
-- Optional: Docker (if containerized development is supported)
-- Node/npm only if the project uses frontend components (not typical for this repo composition)
+### Phase 1: The Core "Image-Based" App (MVP)
+- [x] Build the 5-module monolithic desktop app.
+- [x] Integrate broker API for data and execution.
+- [x] Integrate `feedparser` for RSS news and `VADER` for sentiment.
+- [x] Train and integrate the YOLOv8 vision model.
+- [x] Build the `Strategy Handler` to fuse signals from vision, prediction, and sentiment.
+- [x] Build the PyQt overlay UI.
+- [x] Implement simple, template-based explanations for signals.
 
-### Installation (example)
-1. Clone repository
-   git clone https://github.com/abhi-abhi86/feature.git
-   cd feature
+### Phase 2: Add "Local-AI" Chat (The "Chart-GPT" Feature)
+- [ ] Set up a local LLM runner like Ollama.
+- [ ] Integrate the Ollama Python client into `generative_ai/llm_client.py`.
+- [ ] Build the `chat_widget.py` for the UI.
+- [ ] Build the `prompt_builder.py` to send rich, context-aware prompts to the local LLM for trade explanations.
 
-2. Create and activate virtualenv
-   python -m venv .venv
-   source .venv/bin/activate   # macOS / Linux
-   .venv\Scripts\Activate.ps1  # Windows PowerShell
-
-3. Install dependencies
-   pip install --upgrade pip
-   pip install -r requirements.txt
-
-If the repo uses poetry:
-   poetry install
-
-## Usage examples
-
-Below are generic commands — replace entry points with actual script/package names.
-
-Run a main script
-- Example:
-  python src/train.py --config configs/train.yaml
-
-Run as a package (if package layout exists)
-- Example:
-  python -m feature.train --help
-
-Open notebooks
-- Start Jupyter:
-  jupyter notebook
-  jupyter lab
-
-Automate notebook execution (CI or reproducible runs)
-- Execute a notebook headlessly:
-  jupyter nbconvert --to notebook --execute notebooks/01-training-experiment.ipynb --output notebooks/01-training-experiment.executed.ipynb
-
-Run shell utilities
-- Make executable and run:
-  chmod +x scripts/run_pipeline.sh
-  ./scripts/run_pipeline.sh
-
-## Configuration & data
-
-- Use `.env` or config YAML/JSON for secrets and runtime configs. Include a `.env.example` in repo for required vars:
-  API_KEY=
-  DATA_DIR=./data
-
-- Data should typically be kept out of the repo:
-  Add large data directories to `.gitignore` (e.g., `/data/raw/`).
-
-## Development
-
-### Testing
-- If pytest is used:
-  pip install -r requirements-dev.txt
-  pytest -q
-
-- Example test command:
-  pytest tests/test_model.py::test_training_runs -q
-
-### Formatting & linting
-- Formatting: black
-- Linting: flake8 or pylint
-- Import sorting: isort
-
-Example:
-  pip install black flake8 isort
-  black .
-  isort .
-  flake8
-
-## Contributing
-1. Fork the repository
-2. Create a branch: git checkout -b feat/short-description
-3. Commit changes with clear messages
-4. Push and open a pull request
-
-Include contribution guidelines (CODE_OF_CONDUCT.md and CONTRIBUTING.md) if applicable.
-
-## License
-This repository uses the MIT License (update if different). Include a LICENSE file at the repo root.
-
-## Acknowledgements & contact
-- Credits to libraries and datasets used
-- Repository owner: abhi-abhi86
-- For questions, open an issue or contact via GitHub.
-
----
-
-What I did
-- Expanded the README with a suggested file structure, concrete examples of commands, and an explanation of why Python, Jupyter Notebooks, and Shell appear in this repository.
-
-Next steps I can take for you
-- Inspect the repository and generate a README that lists the exact files and real usage commands (I can then edit and commit the README for you).
-- Generate badges (CI, PyPI, coverage) if CI is present.
-- Create a `.env.example`, `.gitignore` suggestions, or a CI workflow for running tests and linting.
-
-Would you like me to inspect the repo and produce a README that references the actual files (I can then update the README.md in the repository)?  
-
+### Phase 3: The "Push to Cloud" (Future Upgrade)
+- [ ] Refactor the application into `src/client` and `src/server` components.
+- [ ] Replace the local LLM with a cloud-based one (e.g., Gemini API).
+- [ ] Migrate the SQLite database to a cloud database (e.g., Cloud Firestore).
+- [ ] Deploy the server component to a cloud virtual machine.
