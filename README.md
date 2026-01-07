@@ -1,3 +1,7 @@
+#
+it's not working 
+#
+
 # AI-Powered Trading Agent (Zero-Budget MVP)
 
 This project is a desktop-first, AI-powered trading agent designed for the Indian market. It leverages a multi-modal AI approach, fusing signals from computer vision, predictive modeling, and real-time news sentiment analysis. The entire application is built on a "zero-budget" philosophy, using a 100% free and open-source technology stack.
